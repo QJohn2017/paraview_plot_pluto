@@ -30,6 +30,12 @@ def make_standard_view(materialLibrary):
     renderView1.AxesGrid.ZLabelFontFile = ''
     return renderView1
 
+#%%
+Aggiungi controllo che nel vtk.out siano segnati gli stessi vtk che ci sono in realta'.
+Dire come eventuale messaggio di errore, che se non ci sono si puo implementare un
+metodo che seleziona solo i file che che corrispondono alle righe presenti della tablella
+(o analogamente al rovescio, seleziona solo certe righe della tabella..) e stampa un warning a video
+
 #%% Make the view
 # get the material library
 materialLibrary1 = GetMaterialLibrary()
