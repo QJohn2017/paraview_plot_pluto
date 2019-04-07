@@ -31,10 +31,10 @@ def make_standard_view(materialLibrary):
     return renderView1
 
 #%%
-Aggiungi controllo che nel vtk.out siano segnati gli stessi vtk che ci sono in realta'.
-Dire come eventuale messaggio di errore, che se non ci sono si puo implementare un
-metodo che seleziona solo i file che che corrispondono alle righe presenti della tablella
-(o analogamente al rovescio, seleziona solo certe righe della tabella..) e stampa un warning a video
+# Aggiungi controllo che nel vtk.out siano segnati gli stessi vtk che ci sono in realta
+# Dire come eventuale messaggio di errore, che se non ci sono si puo implementare un
+# metodo che seleziona solo i file che che corrispondono alle righe presenti della tablella
+# (o analogamente al rovescio, seleziona solo certe righe della tabella..) e stampa un warning a video
 
 #%% Make the view
 # get the material library
@@ -58,7 +58,7 @@ vtk_files.sort(key=file_order_label)
 # Read files
 data0 = LegacyVTKReader(FileNames=vtk_files)
 
-#%% Make current annotation
+#%% Make an annotation displaying current
 # create a new 'Extract Location'
 extractLocation1 = ExtractLocation(Input=data0)
 extractLocation1.Mode = 'Interpolate At Location'
@@ -73,7 +73,7 @@ extractLocation1.Location = [rcap, z_location, 0.0]
 # create a new 'Calculator'
 calculator1 = Calculator(Input=extractLocation1)
 calculator1.ResultArrayName = 'current'
-calculator1.Function = '0.5e7*(1e-5*(%f))*(1e-4*bx3)' % rcap
+calculator1.Function = '0.5e7*(1e-5*(%g))*(1e-4*bx3)' % rcap
 
 # create a new 'Annotate Attribute Data'
 annotateAttributeData1 = AnnotateAttributeData(Input=calculator1)
@@ -83,29 +83,50 @@ annotateAttributeData1.Prefix = 'current(A)='
 #%% Create views with T, ne, B
 
 
+#%% Make an annotation displaying time
+# create a new 'Programmable Filter' to read vtk.out data to vtkTable
+programmableFilter1 = ProgrammableFilter(Input=data0)
+programmableFilter1.OutputDataSetType = 'vtkTable'
+programmableFilter1.Script = """import numpy as np
+import os
+
+#%% Settings
+sim_dir = '/home/ema/simulazioni/sims_pluto/dens_real/1.3e5Pa/'
+
+#
+cols_chosen = (0,1)  # Columns to chose
+cols_names = ('ti_pluto', 't_pluto')
+
+#%% Load data with numpy
+data_path = os.path.join(sim_dir, 'out', 'vtk.out')
+data = np.genfromtxt(data_path, dtype=None,
+                     usecols=cols_chosen, names=cols_names,
+                     delimiter=' ', autostrip=True)
+
+#%% Convert/output to vtkTable
+for name in data.dtype.names:
+    array = data[name]
+    output.RowData.append(array, name)"""
+programmableFilter1.RequestInformationScript = ''
+programmableFilter1.RequestUpdateExtentScript = ''
+programmableFilter1.PythonPath = ''
+
+# create a new 'Python Annotation' to display time from vtkTable just read
+pythonAnnotation2 = PythonAnnotation(Input=programmableFilter1)
+pythonAnnotation2.ArrayAssociation = 'Row Data'
+pythonAnnotation2.Expression = "'time=' + '%g'%t_pluto[t_index]"
+
 #%% Visualize
-# ----------------------------------------------------------------
-# restore active view
-SetActiveView(renderView1)
-# ----------------------------------------------------------------
-# show data from data0
+# Display time in lower left corner
+pythonAnnotation2Display = Show(pythonAnnotation2, renderView1)
+pythonAnnotation2Display.WindowLocation = 'LowerLeftCorner'
+# Display current
+annotateAttributeData1Display = Show(annotateAttributeData1, renderView1)
+# Display data
 data0Display = Show(data0, renderView1)
-# data1Display = Show(data0, renderView2)
 
 
 #%% Final stuff
+SetActiveView(renderView1)
 Render()
 Show()
-
-# raw_input('press enter to close')
-
-#
-# p = os.walk('/home/ema/simulazioni/sims_pluto/dens_real/1.3e5Pa')
-# for root,dirs,files in p:
-#     print '--- NEXT ITERATION ---'
-#     print '--- root ---'
-#     print root
-#     print '--- dirs ---'
-#     print dirs
-#     print '--- files ---'
-#     print files

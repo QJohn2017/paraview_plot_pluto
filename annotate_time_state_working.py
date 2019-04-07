@@ -6,7 +6,7 @@
 
 # trace generated using paraview version 5.6.0
 #
-# To ensure correct image size when batch processing, please search 
+# To ensure correct image size when batch processing, please search
 # for and uncomment the line `# renderView*.ViewSize = [*,*]`
 
 #### import the simple module from the paraview
@@ -61,7 +61,7 @@ sim_dir = '/home/ema/simulazioni/sims_pluto/dens_real/1.3e5Pa/'
 
 #
 cols_chosen = (0,1)  # Columns to chose
-cols_names = ('ti_ema', 't_ema')
+cols_names = ('ti_pluto', 't_pluto')
 
 #%% Load data with numpy
 data_path = os.path.join(sim_dir, 'out', 'vtk.out')
@@ -80,7 +80,7 @@ programmableFilter1.PythonPath = ''
 # create a new 'Python Annotation'
 pythonAnnotation2 = PythonAnnotation(Input=programmableFilter1)
 pythonAnnotation2.ArrayAssociation = 'Row Data'
-pythonAnnotation2.Expression = "'%g ns' % t_ema[t_index]"
+pythonAnnotation2.Expression = "'%g ns' % t_pluto[t_index]"
 
 # ----------------------------------------------------------------
 # setup the visualization in view 'renderView1'
