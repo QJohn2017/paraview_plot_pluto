@@ -1,6 +1,9 @@
 #### import the simple module from the paraview
 from paraview.simple import *
 import os
+import sys
+
+scripts_dir = '/home/ema/myprogr/paraview_scripting'
 
 #### disable automatic camera reset on 'Show'
 paraview.simple._DisableFirstRenderCameraReset()
@@ -30,31 +33,28 @@ def make_standard_view(materialLibrary):
     renderView1.AxesGrid.ZLabelFontFile = ''
     return renderView1
 
-#%%
-# Aggiungi controllo che nel vtk.out siano segnati gli stessi vtk che ci sono in realta
-# Dire come eventuale messaggio di errore, che se non ci sono si puo implementare un
-# metodo che seleziona solo i file che che corrispondono alle righe presenti della tablella
-# (o analogamente al rovescio, seleziona solo certe righe della tabella..) e stampa un warning a video
-
 #%% Make the view
 # get the material library
 materialLibrary1 = GetMaterialLibrary()
 renderView1 = make_standard_view(materialLibrary1)
 # renderView2 = make_standard_view(materialLibrary1)
 
-#%% Read files
+#%% Read files (sorted)
 sim_dir = raw_input('Tell simulation abs path:\n')
 print sim_dir
 out_dir = os.path.join(sim_dir,'out')
 
 root, dirs, out_files = next(os.walk(out_dir))
 vtk_files = []
+# t_index_pluto = []
+file_order_label = lambda x : int(x.split('.')[-2])  # Function for getting the file ordering label
 for file in out_files:
     if file.endswith('.vtk'):
         vtk_files.append(os.path.join(root, file))
+        # t_index_pluto.append(file_order_label(file))
 # Sort the files based on file labels (alphabetical order is not ok!!)
-file_order_label = lambda x : int(x.split('.')[-2])
 vtk_files.sort(key=file_order_label)
+
 # Read files
 data0 = LegacyVTKReader(FileNames=vtk_files)
 
@@ -87,26 +87,12 @@ annotateAttributeData1.Prefix = 'current(A)='
 # create a new 'Programmable Filter' to read vtk.out data to vtkTable
 programmableFilter1 = ProgrammableFilter(Input=data0)
 programmableFilter1.OutputDataSetType = 'vtkTable'
-programmableFilter1.Script = """import numpy as np
-import os
+s = open(os.path.join(scripts_dir,
+                      'read_vtkout_as_table_programmable_filter_script.py'),
+         'r')
+script = s.read()
+programmableFilter1.Script = script % (sim_dir)
 
-#%% Settings
-sim_dir = '/home/ema/simulazioni/sims_pluto/dens_real/1.3e5Pa/'
-
-#
-cols_chosen = (0,1)  # Columns to chose
-cols_names = ('ti_pluto', 't_pluto')
-
-#%% Load data with numpy
-data_path = os.path.join(sim_dir, 'out', 'vtk.out')
-data = np.genfromtxt(data_path, dtype=None,
-                     usecols=cols_chosen, names=cols_names,
-                     delimiter=' ', autostrip=True)
-
-#%% Convert/output to vtkTable
-for name in data.dtype.names:
-    array = data[name]
-    output.RowData.append(array, name)"""
 programmableFilter1.RequestInformationScript = ''
 programmableFilter1.RequestUpdateExtentScript = ''
 programmableFilter1.PythonPath = ''
