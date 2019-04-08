@@ -3,7 +3,7 @@ from paraview.simple import *
 import os
 import sys
 
-scripts_dir = '/home/ema/myprogr/paraview_scripting'
+scripts_dir = '/home/ema/myprogr/paraview_plot_pluto'
 
 #### disable automatic camera reset on 'Show'
 paraview.simple._DisableFirstRenderCameraReset()
